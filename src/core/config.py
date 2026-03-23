@@ -22,6 +22,8 @@ class AppSettings(BaseSettings):
 
     default_timezone: str = Field(default="UTC")
     llm_provider: str = Field(default="gemini")
+    gemini_api_key: str = Field(default="")
+    gemini_model: str = Field(default="gemini-2.0-flash")
     enable_narration: bool = Field(default=False)
     enable_tool_calling: bool = Field(default=False)
     enable_evals: bool = Field(default=False)

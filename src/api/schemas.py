@@ -83,6 +83,18 @@ class ExplainMetricResponse(BaseModel):
     source_model: str
 
 
+class NLQueryRequest(BaseModel):
+    question: str
+    execute: bool = Field(default=True, description="If true, also execute the translated query")
+
+
+class NLQueryResponse(BaseModel):
+    question: str
+    translated: dict[str, Any]
+    result: Optional[QueryMetricResponse] = None
+    error: Optional[str] = None
+
+
 class ErrorResponse(BaseModel):
     error: str
     detail: str
