@@ -17,14 +17,25 @@ from src.api.schemas import (
     LineageInfo,
     MetricDefinition,
     MetricListResponse,
+    NLQueryRequest,
+    NLQueryResponse,
     QueryMetricRequest,
     QueryMetricResponse,
     QueryResultRow,
 )
 from src.core.config import get_settings
+from src.core.enums import Grain
 from src.llm.narration_service import NarrationService
 from src.services.query_executor import QueryExecutor
 from src.services.semantic_registry import SemanticRegistry
+
+
+def _build_gemini_client(settings):
+    """Create a GeminiClient if an API key is configured."""
+    if not settings.gemini_api_key:
+        return None
+    from src.llm.gemini_client import GeminiClient
+    return GeminiClient(api_key=settings.gemini_api_key, model_name=settings.gemini_model)
 
 
 class MetricService:
@@ -35,7 +46,11 @@ class MetricService:
         self._settings = get_settings()
         self._adapter = create_adapter(self._settings)
         self._executor = QueryExecutor(self._adapter)
-        self._narration = NarrationService(enabled=self._settings.enable_narration)
+        self._gemini = _build_gemini_client(self._settings)
+        self._narration = NarrationService(
+            enabled=self._settings.enable_narration,
+            gemini_client=self._gemini,
+        )
 
     def list_metrics(self) -> MetricListResponse:
         metrics = self._registry.list_metrics()
@@ -125,6 +140,61 @@ class MetricService:
             default_filters=metric.default_filters,
             source_model="stg_margin_calls",
         )
+
+    def nl_query(self, request: NLQueryRequest) -> NLQueryResponse:
+        if self._gemini is None:
+            return NLQueryResponse(
+                question=request.question,
+                translated={},
+                error="Gemini API key not configured. Set GEMINI_API_KEY.",
+            )
+
+        from src.llm.nl_query_service import NLQueryService
+        nl_service = NLQueryService(self._gemini)
+        translated = nl_service.translate(request.question)
+
+        if "error" in translated:
+            return NLQueryResponse(
+                question=request.question,
+                translated=translated,
+                error=translated.get("explanation", translated.get("raw_response", "Translation failed")),
+            )
+
+        if not request.execute:
+            return NLQueryResponse(question=request.question, translated=translated)
+
+        # Build and execute the translated query
+        try:
+            grain_val = Grain(translated.get("grain", "day"))
+            start_date = (
+                date.fromisoformat(translated["start_date"])
+                if translated.get("start_date")
+                else None
+            )
+            end_date = (
+                date.fromisoformat(translated["end_date"])
+                if translated.get("end_date")
+                else None
+            )
+            query_req = QueryMetricRequest(
+                metric=translated["metric"],
+                grain=grain_val,
+                filters=translated.get("filters", {}),
+                start_date=start_date,
+                end_date=end_date,
+            )
+            result = self.query_metric(query_req)
+            return NLQueryResponse(
+                question=request.question,
+                translated=translated,
+                result=result,
+            )
+        except (KeyError, ValueError) as exc:
+            return NLQueryResponse(
+                question=request.question,
+                translated=translated,
+                error=f"Execution failed: {exc}",
+            )
 
     @staticmethod
     def _format_period(value: Any) -> str:

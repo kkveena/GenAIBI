@@ -8,6 +8,8 @@ from src.api.schemas import (
     ExplainMetricRequest,
     ExplainMetricResponse,
     MetricListResponse,
+    NLQueryRequest,
+    NLQueryResponse,
     QueryMetricRequest,
     QueryMetricResponse,
 )
@@ -66,3 +68,14 @@ def explain_metric(request: ExplainMetricRequest) -> ExplainMetricResponse:
         return service.explain_metric(request.metric)
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.post(
+    "/nl-query",
+    response_model=NLQueryResponse,
+    responses={400: {"model": ErrorResponse}},
+)
+def nl_query(request: NLQueryRequest) -> NLQueryResponse:
+    """Translate a natural-language question into a governed metric query via Gemini."""
+    service = _get_service()
+    return service.nl_query(request)
