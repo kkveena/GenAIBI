@@ -1,0 +1,54 @@
+version: 2
+
+semantic_models:
+  - name: margin_call_analysis
+    description: "Semantic model for margin call risk analysis."
+    model: ref('stg_margin_calls')
+    entities:
+      - name: call_id
+        type: primary
+        description: "Unique margin call identifier."
+    dimensions:
+      - name: event_at
+        type: time
+        description: "Event date/time for time-based analysis."
+        type_params:
+          time_granularity: day
+      - name: status_name
+        type: categorical
+        description: "Margin call status (CONFIRMED, PENDING, CANCELLED, UNKNOWN)."
+      - name: account_id
+        type: categorical
+        description: "Account identifier for account-level analysis."
+    measures:
+      - name: net_val
+        agg: sum
+        description: "Sum of net exposure (margin_amount_usd - collateral_amount_usd)."
+      - name: margin_amount_usd
+        agg: sum
+        description: "Sum of margin call amounts."
+      - name: call_count
+        agg: count_distinct
+        expr: call_id
+        description: "Count of distinct margin calls."
+
+metrics:
+  - name: net_margin_exposure
+    description: "Total net margin exposure: sum of net_val for confirmed margin calls."
+    type: simple
+    type_params:
+      measure: net_val
+    filter: "status_name = 'CONFIRMED'"
+
+  - name: high_risk_breaches
+    description: "Count of confirmed margin calls exceeding $5M threshold."
+    type: simple
+    type_params:
+      measure: call_count
+    filter: "status_name = 'CONFIRMED' AND margin_amount_usd > 5000000"
+
+  - name: total_margin_calls
+    description: "Total count of all margin calls regardless of status."
+    type: simple
+    type_params:
+      measure: call_count

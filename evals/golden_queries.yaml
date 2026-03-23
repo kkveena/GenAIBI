@@ -1,0 +1,26 @@
+version: 1
+
+golden_queries:
+  - id: gq-001
+    question: "What was the net exposure for confirmed calls in January 2025?"
+    expected_metric: net_margin_exposure
+    expected_filters:
+      status_name: CONFIRMED
+    expected_grain: month
+    expected_start_date: "2025-01-01"
+    expected_end_date: "2025-01-31"
+
+  - id: gq-002
+    question: "How many high-risk breaches occurred in January 2025?"
+    expected_metric: high_risk_breaches
+    expected_filters:
+      status_name: CONFIRMED
+    expected_grain: month
+    expected_start_date: "2025-01-01"
+    expected_end_date: "2025-01-31"
+
+  - id: gq-003
+    question: "What is the total number of margin calls?"
+    expected_metric: total_margin_calls
+    expected_filters: {}
+    expected_grain: day

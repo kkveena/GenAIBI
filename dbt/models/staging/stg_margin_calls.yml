@@ -1,0 +1,37 @@
+version: 2
+
+models:
+  - name: stg_margin_calls
+    description: "Staged margin call data with standardized fields, status mapping, and net_val computation."
+    columns:
+      - name: call_id
+        description: "Unique margin call identifier."
+        tests:
+          - not_null
+          - unique
+      - name: account_id
+        description: "Account identifier."
+        tests:
+          - not_null
+      - name: margin_amount_usd
+        description: "Margin call amount in USD."
+        tests:
+          - not_null
+      - name: collateral_amount_usd
+        description: "Collateral value in USD."
+        tests:
+          - not_null
+      - name: net_val
+        description: "Net exposure value: margin_amount_usd - collateral_amount_usd."
+        tests:
+          - not_null
+      - name: status_name
+        description: "Human-readable status from raw status code."
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['CONFIRMED', 'PENDING', 'CANCELLED', 'UNKNOWN']
+      - name: event_at
+        description: "Event timestamp."
+        tests:
+          - not_null

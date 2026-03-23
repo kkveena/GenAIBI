@@ -1,0 +1,43 @@
+version: 2
+
+sources:
+  - name: raw_app_data
+    description: "Raw margin transaction data from application backend."
+    meta:
+      external_location: './data/raw/*.json'
+    tables:
+      - name: margin_transactions
+        description: "Raw JSON export of margin call transactions."
+        columns:
+          - name: id
+            description: "Unique call identifier."
+          - name: acct_id
+            description: "Account identifier."
+          - name: mc_amt
+            description: "Margin call amount in USD."
+          - name: collateral_val
+            description: "Collateral value in USD."
+          - name: st_cd
+            description: "Status code (4=CONFIRMED, 5=PENDING, 0=CANCELLED)."
+          - name: event_ts
+            description: "Event timestamp."
+
+  - name: raw_sql_data
+    description: "Curated SQL view for margin transactions."
+    schema: risk_ops
+    tables:
+      - name: vw_margin_transactions_consolidated
+        description: "Curated SQL view with pre-resolved joins."
+        columns:
+          - name: call_id
+            description: "Unique call identifier."
+          - name: account_id
+            description: "Account identifier."
+          - name: mc_amt
+            description: "Margin call amount in USD."
+          - name: collateral_val
+            description: "Collateral value in USD."
+          - name: st_cd
+            description: "Status code."
+          - name: event_ts
+            description: "Event timestamp."
