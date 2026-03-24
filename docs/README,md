@@ -1,0 +1,9 @@
+config = types.GenerateContentConfig(
+        temperature=0,
+        max_output_tokens=8192,
+        thinking_config=types.ThinkingConfig(
+            include_thoughts=True, 
+            max_thought_tokens=2000 # Reserved budget for reasoning
+        ),
+        response_mime_type="application/json",
+    )
